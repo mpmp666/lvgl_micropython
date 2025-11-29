@@ -1,0 +1,39 @@
+name: Build LVGL MicroPython for ESP32-S3
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake ninja-build libusb-1.0-0-dev git wget unzip
+
+      - name: Build firmware
+        run: |
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          python3 make.py esp32 BOARD=ESP32_GENERIC_S3 BOARD_VARIANT=SPIRAM_OCT DISPLAY=st7789 --flash-size=16 --enable-cdc-repl=y
+
+      - name: Upload build directory
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-esp32-full
+          path: build-esp32/
+          if-no-files-found: error
